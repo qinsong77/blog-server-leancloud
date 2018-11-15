@@ -1,74 +1,82 @@
-'use strict';
+"use strict"
 
-const AV = require('leanengine')
-
+const AV = require("leanengine")
+const jwt = require("jsonwebtoken")
+const config = require("../../config")
 // AV.Object.extend('className') 所需的参数 className 则表示对应的表名
 // 声明一个类型
 // const User = AV.Object.extend('User')
 
-let UserModel = {};
+let UserModel = {}
 
-UserModel.register = function (req, res, next) {
-    const _user = {
-        username: req.body.username,
-        password: req.body.password
-    }
-    console.log(_user);
-    // if (!_user.username.trim() && !_user.password.trim()) {
-    //     console.log('注册账号时，用户名和密码为空了');
-    //     res.status(200).send({
-    //         result: false,
-    //         msg: '用户名和密码不可为空!'
-    //     })
-    // };
-    let user = new AV.User();
-    user.setUsername(_user.username);
-    user.setPassword(_user.password);
-    // user.set('username', _user.username);
-    // user.set('password', _user.password);
-    user.signUp().then(function (user) {
-        res.saveCurrentUser(user);
-        res.send({
-            result: true,
-            msg: '注册成功！'
-        });
-        // res.redirect('/todos');
-    }, function (err) {
-        res.send({
-            result: false,
-            msg: 'Username has already been taken!'
-        })
-    });
-};
-
-UserModel.login = async (ctx,next) =>{
-    const _user = {
+UserModel.register = async (ctx, next) => {
+    const registerUser = {
         username: ctx.request.body.username,
-        password: ctx.request.body.password
+        password: ctx.request.body.password,
     }
-    await AV.User.logIn(_user.username, _user.password).then(function (user) {
-         ctx.response.saveCurrentUser(user);
-        // console.log(req.currentUser.get('username'));
+    console.log(registerUser)
+    const user = new AV.User()
+    user.setUsername(registerUser.username)
+    user.setPassword(registerUser.password)
+    await user.signUp().then((userRegistered)=> {
+        console.log(userRegistered)
+        // ctx.response.saveCurrentUser(userRegistered)
         ctx.body = {
             result: true,
-            msg: user
-        };
-    }, function (error) {
-        ctx.body = {
+            msg: "注册成功！",
+        }
+    }).catch(error => {
+        console.log(error)
+        ctx.response.body = {
             result: false,
-            msg: error
+            msg: error,
         }
     })
     next()
-};
+}
+
+UserModel.login = async (ctx, next) =>{
+    const loginUser = {
+        username: ctx.request.body.username,
+        password: ctx.request.body.password,
+    }
+    await AV.User.logIn(loginUser.username, loginUser.password).then((user) =>{
+        // ctx.response.saveCurrentUser(user)
+        // console.log(ctx.request.currentUser.get("username"))
+        const userToken = {
+            name: user.username,
+            id: user.objectId
+        }
+        console.log(userToken)
+        console.log(config.secret)
+        const token = jwt.sign(userToken, config.secret) // 签发token
+        ctx.body = {
+            result: true,
+            content: {
+                msg: "登陆成功",
+                token: token
+            }
+        }
+    }).catch((error)=> {
+        console.log(error)
+        ctx.body = {
+            result: false,
+            content: {
+                msg: "登陆失败",
+                info:error
+            }
+        }
+    })
+    next()
+}
 
 UserModel.logout = async (req, res) => {
-    AV.User.logOut();
-    var currentUser = AV.User.current();
+    AV.User.logOut()
+    const currentUser = AV.User.current()
     res.send(currentUser)
-};
+}
 
-module.exports = UserModel;
+module.exports = UserModel
 //     async(req, res) => {
 //     const _user = {
 //         username: req.body.username,
@@ -80,11 +88,10 @@ module.exports = UserModel;
 //     }
 //
 //     AV.User.logIn(_user.username, _user.password).then(function(user) {
-//         console.log(user);
-//         res.send(loginedUser);
+//         console.log(user)
+//         res.send(loginedUser)
 //     }, function (error) {
-//         console.error(error);
+//         console.error(error)
 //         res.status(500).send(error)
-//     });
+//     })
 // }
-
