@@ -35,6 +35,7 @@ Date.prototype.Format = function (fmt) {
 let Content = {}
 
 Content.hello = (ctx, next) => {
+    console.log(ctx.request.currentUser)
     console.log(ctx.request.currentUser.get("username"))
     if (ctx.request.currentUser) {
         // 如果已经登录，发送当前登录用户信息。

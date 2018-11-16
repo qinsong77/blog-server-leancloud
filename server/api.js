@@ -16,6 +16,7 @@ const user = require("./modules/user");
 const mes = require("./modules/leaveMess");
 const check = require("./modules/checkLogin");
 const file = require("./modules/file");
+const directory = require("./modules/directory")
 // 路由设置
 router.get("/hello", check.checkLogin, article.hello);
 // User
@@ -23,6 +24,9 @@ router.post("/login", user.login);
 router.post("/logout", user.logout);
 router.post("/register", check.checkNotLogin, user.register);
 
+// 目录
+router.post("/newDir", directory.newDir);
+router.get("/queryDir", directory.queryDir);
 // article
 router.get("/articleAll", article.articleAll);
 router.get("/getArticleListByPage/:page", article.getArticleListByPage);

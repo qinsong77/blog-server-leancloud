@@ -14,16 +14,15 @@ UserModel.register = async (ctx, next) => {
         username: ctx.request.body.username,
         password: ctx.request.body.password,
     }
-    console.log(registerUser)
     const user = new AV.User()
     user.setUsername(registerUser.username)
     user.setPassword(registerUser.password)
     await user.signUp().then((userRegistered)=> {
-        console.log(userRegistered)
-        // ctx.response.saveCurrentUser(userRegistered)
+        ctx.response.saveCurrentUser(userRegistered)
         ctx.body = {
             result: true,
-            msg: "注册成功！",
+            msg: "登陆成功",
+            content: userRegistered._sessionToken
         }
     }).catch(error => {
         console.log(error)
@@ -41,57 +40,69 @@ UserModel.login = async (ctx, next) =>{
         password: ctx.request.body.password,
     }
     await AV.User.logIn(loginUser.username, loginUser.password).then((user) =>{
-        // ctx.response.saveCurrentUser(user)
+        ctx.response.saveCurrentUser(user)
         // console.log(ctx.request.currentUser.get("username"))
-        const userToken = {
-            name: user.username,
-            id: user.objectId
-        }
-        console.log(userToken)
-        console.log(config.secret)
-        const token = jwt.sign(userToken, config.secret) // 签发token
+        // 打印的user 格式
+        // child {
+        //     _serverData:
+        //     { username: 'admin',
+        //         emailVerified: false,
+        //         mobilePhoneVerified: false },
+        //     _opSetQueue: [ {} ],
+        //         _flags: {},
+        //     attributes:
+        //     { username: 'admin',
+        //         emailVerified: false,
+        //         mobilePhoneVerified: false },
+        //     _hashedJSON: {},
+        //     _escapedAttributes: {},
+        //     cid: 'c1',
+        //         changed: {},
+        //     _silent: {},
+        //     _pending: {},
+        //     _hasData: undefined,
+        //         _previousAttributes: {},
+        //     _sessionToken: '',
+        //         id: '',
+        //         createdAt: 2018-11-15T07:39:06.301Z,
+        //         updatedAt: 2018-11-15T07:39:06.301Z }
+
+        // 可使用jsonwebtoken管理用户状态
+        // const userToken = {
+        //     name: user.attributes.username,
+        //     id: user.id
+        // }
+        // const token = jwt.sign(userToken, config.secret) // 签发token
         ctx.body = {
             result: true,
-            content: {
-                msg: "登陆成功",
-                token: token
-            }
+            msg: "登陆成功",
+            content: user._sessionToken
         }
     }).catch((error)=> {
         console.log(error)
         ctx.body = {
             result: false,
-            content: {
-                msg: "登陆失败",
-                info:error
-            }
+            msg: "登陆失败",
+            content: error
         }
     })
     next()
 }
 
-UserModel.logout = async (req, res) => {
-    AV.User.logOut()
-    const currentUser = AV.User.current()
-    res.send(currentUser)
+UserModel.logout = async (ctx, next) => {
+    await AV.User.logOut()
+    const currentUser = ctx.request.currentUser
+    if (currentUser) {
+        ctx.body = {
+            result: false,
+            msg: "退出登陆失败"
+        }
+    } else {
+        ctx.body = {
+            result: true,
+            msg: "退出登陆成功",
+        }
+    }
 }
 
 module.exports = UserModel
-//     async(req, res) => {
-//     const _user = {
-//         username: req.body.username,
-//         password: req.body.password
-//     }
-//
-//     if (!_user.username.trim() && !_user.password.trim()) {
-//         res.status(500).send('用户名和密码不可为空')
-//     }
-//
-//     AV.User.logIn(_user.username, _user.password).then(function(user) {
-//         console.log(user)
-//         res.send(loginedUser)
-//     }, function (error) {
-//         console.error(error)
-//         res.status(500).send(error)
-//     })
-// }
