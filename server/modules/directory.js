@@ -2,11 +2,12 @@ const AV = require("leanengine")
 const Directory = AV.Object.extend("directory")
 const dir = {}
 
-dir.newDir = async (ctx, netx) => {
+dir.newDir = async (ctx, next) => {
     const {
         label, parent, root, leaf
     } = ctx.request.body
     const saveDir = async ()=> {
+        console.log(parent)
         const newDir = new Directory()
         newDir.set("label", label)
         newDir.set("parent", parent)
@@ -41,36 +42,43 @@ dir.queryDir = async (ctx, next) => {
         const result = []
         const child = {}
         data.forEach(item =>{
-            const id = item.get("objectId")
+            let id = item.get("objectId")
             if (item.get("root")) {
                 result.push({
-                    id: id,
+                    value: id,
                     label: item.get("label"),
                     root: item.get("root"),
                     children: []
                 })
+                if(!child.hasOwnProperty(id)){
+                    child[id] = []
+                }
             } else {
-                if(child.hasOwnProperty(id)){
-                    child[id].push(item)
+                let parent = item.get("parent").id
+                console.log(parent)
+                console.log(child.hasOwnProperty(parent))
+                if(child.hasOwnProperty(parent)){
+                    child[parent].push(item)
                 } else {
-                    child[id] = [];
-                    child[id].push(item)
+                    child[parent] = [];
+                    child[parent].push(item)
                 }
             }
         })
+        console.log(child)
         result.forEach(item => {
-            item.children = child[item.objectId]
+            item.children = child[item.value]
         })
         ctx.body = {
             result: true,
-            msg: "保存成功",
+            msg: "查询成功",
             content: result
         }
     } catch (error) {
-        console.log("提交失败:" + error)
+        console.log("查询失败:" + error)
         ctx.body = {
             result: false,
-            msg: "提交失败",
+            msg: "查询失败",
         }
     }
 }

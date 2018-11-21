@@ -82,8 +82,8 @@ UserModel.login = async (ctx, next) =>{
         console.log(error)
         ctx.body = {
             result: false,
-            msg: "登陆失败",
-            content: error
+            msg: "登陆失败," + `${error.rawMessage}(code:${error.code})`,
+            // content: error
         }
     })
     next()
