@@ -28,6 +28,29 @@ dir.newDir = async (ctx, next) => {
         ctx.body = {
             result: false,
             msg: "提交失败",
+            content: error
+        }
+    }
+}
+dir.deleteDir = async (ctx, next) => {
+    const id = ctx.request.body.id
+    console.log(id)
+    let directory = AV.Object.createWithoutData("directory", id)
+    const deleteDir = async ()=> directory.destroy()
+    try {
+        const data = await deleteDir()
+        if (data) {
+            ctx.body = {
+                result: true,
+                msg: "删除成功",
+                content: data
+            }
+        }
+    } catch (e) {
+        ctx.body = {
+            result: false,
+            msg: "删除失败",
+            content: e
         }
     }
 }
@@ -47,27 +70,31 @@ dir.queryDir = async (ctx, next) => {
                 result.push({
                     value: id,
                     label: item.get("label"),
-                    root: item.get("root"),
-                    children: []
+                    root: item.get("root")
                 })
-                if(!child.hasOwnProperty(id)){
+                if (!child.hasOwnProperty(id)) {
                     child[id] = []
                 }
             } else {
                 let parent = item.get("parent").id
-                console.log(parent)
-                console.log(child.hasOwnProperty(parent))
-                if(child.hasOwnProperty(parent)){
-                    child[parent].push(item)
+                if (child.hasOwnProperty(parent)) {
+                    child[parent].push({
+                        value: id,
+                        label: item.get("label"),
+                        root: item.get("root")
+                    })
                 } else {
                     child[parent] = [];
-                    child[parent].push(item)
+                    child[parent].push({
+                        value: id,
+                        label: item.get("label"),
+                        root: item.get("root")
+                    })
                 }
             }
         })
-        console.log(child)
         result.forEach(item => {
-            item.children = child[item.value]
+            if (child.hasOwnProperty(item.value) && child[item.value].length > 0) item.children = child[item.value]
         })
         ctx.body = {
             result: true,

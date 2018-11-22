@@ -26,6 +26,7 @@ router.post("/register", check.checkNotLogin, user.register);
 
 // 目录
 router.post("/newDir", directory.newDir);
+router.post("/deleteDir", directory.deleteDir);
 router.get("/queryDir", directory.queryDir);
 // article
 router.get("/articleAll", article.articleAll);
@@ -45,6 +46,7 @@ router.post("/mes/submitMes", check.checkLogin, mes.submitMess);
 
 // Tag
 router.get("/tags", tags.tags);
+router.post("/tags", tags.newTag);
 router.get("/tags/:tagId", tags.tagList);
 
 
