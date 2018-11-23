@@ -5,7 +5,7 @@
 "use strict"
 
 const AV = require("leanengine")
-
+const Article = AV.Object.extend("article")
 // 对Date的拓展，将Date转化为制定个事的String
 // 例子：
 // (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
@@ -168,35 +168,42 @@ Content.getArticleDetailByID = async (req, res) => {
     }
 }
 
-var postContentList = AV.Object.extend("ContentList")
 
-Content.submitArticle = async (req, res) => {
-    let _post = {
-        title: req.body.title,
-        content: req.body.content,
-        abstract: req.body.abstract,
+Content.submitArticle = async (ctx, next) => {
+    const {
+        title,
+        dirs,
+        desc,
+        tags,
+        content,
+    } = ctx.request.body
+    const saveArticle = async () =>{
+        const myPost = new Article()
+        myPost.set("title", title)
+        myPost.set("content", content)
+        myPost.set("desc", desc)
+        myPost.set("dirs", dirs)
+        myPost.set("tags", tags)
+        myPost.set("owner", ctx.request.currentUser)
+        myPost.set("author", ctx.request.currentUser.attributes.username)
+        return myPost.save()
     }
-    // console.log(_post)
-    // if (!_post.title.trim() || !_post.content.trim()) {
-    //     res.status(500).send('昵称和内容不可为空')
-    // }
 
-    let myPost = new postContentList()
-    myPost.set("title", _post.title)
-    myPost.set("content", _post.content)
-    myPost.set("abstract", _post.abstract)
-    myPost.set("author", req.currentUser.get("username"))
-
-    myPost.save().then(function (p) {
-        console.log("objectId is " + p.id)
-        res.send({
+    try {
+        const data = await saveArticle()
+        ctx.body = {
             result: true,
-            msg: "post successfully,this article id :" + p.id,
-        })
-    }, function (error) {
-        console.error(error)
-        res.status(200).send(error)
-    })
+            msg: "保存成功",
+            content: data
+        }
+    } catch (error) {
+        console.log("保存失败:" + error)
+        ctx.body = {
+            result: false,
+            msg: "保存失败",
+            content: error
+        }
+    }
 }
 
 module.exports = Content

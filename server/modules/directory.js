@@ -7,7 +7,6 @@ dir.newDir = async (ctx, next) => {
         label, parent, root, leaf
     } = ctx.request.body
     const saveDir = async ()=> {
-        console.log(parent)
         const newDir = new Directory()
         newDir.set("label", label)
         newDir.set("parent", parent)
@@ -33,7 +32,7 @@ dir.newDir = async (ctx, next) => {
     }
 }
 dir.deleteDir = async (ctx, next) => {
-    const id = ctx.request.body.id
+    const id = ctx.query.id
     console.log(id)
     let directory = AV.Object.createWithoutData("directory", id)
     const deleteDir = async ()=> directory.destroy()

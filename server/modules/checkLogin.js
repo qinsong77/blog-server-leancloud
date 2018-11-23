@@ -17,7 +17,7 @@ const check = {
         } else {
             ctx.body = {
                 result: false,
-                msg: "已登录",
+                msg: "已登陆",
             }
         }
     },

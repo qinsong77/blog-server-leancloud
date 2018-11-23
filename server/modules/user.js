@@ -17,21 +17,30 @@ UserModel.register = async (ctx, next) => {
     const user = new AV.User()
     user.setUsername(registerUser.username)
     user.setPassword(registerUser.password)
-    await user.signUp().then((userRegistered)=> {
-        ctx.response.saveCurrentUser(userRegistered)
-        ctx.body = {
-            result: true,
-            msg: "登陆成功",
-            content: userRegistered._sessionToken
-        }
-    }).catch(error => {
-        console.log(error)
+    try {
+        await user.signUp().then((userRegistered)=> {
+            console.log(userRegistered)
+            ctx.response.saveCurrentUser(userRegistered)
+            ctx.body = {
+                result: true,
+                msg: "登陆成功",
+                content: userRegistered._sessionToken
+            }
+        }).catch(error1 => {
+            console.error(error1)
+            console.log(error1)
+            ctx.response.body = {
+                result: false,
+                msg: error1,
+            }
+        })
+    } catch (error2) {
+        console.error(error2)
         ctx.response.body = {
             result: false,
-            msg: error,
+            msg: error2,
         }
-    })
-    next()
+    }
 }
 
 UserModel.login = async (ctx, next) =>{
