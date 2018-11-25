@@ -176,12 +176,14 @@ Content.submitArticle = async (ctx, next) => {
         desc,
         tags,
         content,
+        origin
     } = ctx.request.body
     const saveArticle = async () =>{
         const myPost = new Article()
         myPost.set("title", title)
         myPost.set("content", content)
         myPost.set("desc", desc)
+        myPost.set("origin", origin)
         myPost.set("dirs", dirs)
         myPost.set("tags", tags)
         myPost.set("owner", ctx.request.currentUser)

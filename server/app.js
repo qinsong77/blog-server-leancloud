@@ -22,7 +22,7 @@ app.use(statics(path.join(__dirname, "../public")));
 // 加载云引擎中间件
 app.use(AV.koa());
 app.use(AV.Cloud.CookieSession({
-    framework: "koa", secret: config.secret, maxAge: 3600000, fetchUser: true
+    framework: "koa", secret: config.secret, maxAge: 36000000, fetchUser: true
 }));
 app.use(bodyParser());
 // api配置

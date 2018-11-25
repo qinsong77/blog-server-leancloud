@@ -22,15 +22,15 @@ const check = {
         }
     },
     checkIfAdmin(ctx, next) {
-        if ((ctx.request.currentUser.attributes.username !== "admin")) {
+        if ((ctx.request.currentUser.attributes.username === "admin") || ctx.request.currentUser.attributes.username === "sysuke") {
+            next()
+        } else {
             ctx.body = {
                 result: false,
-                content: {
-                    msg: "您不是管理员，无权限操作！"
-                }
+                msg: "您不是管理员，无权限操作！",
+                content: null
             }
-        } else {
-            next()
+
         }
     },
 }
