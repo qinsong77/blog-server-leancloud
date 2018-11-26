@@ -30,7 +30,6 @@ const check = {
                 msg: "您不是管理员，无权限操作！",
                 content: null
             }
-
         }
     },
 }

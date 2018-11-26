@@ -95,7 +95,6 @@ UserModel.login = async (ctx, next) =>{
             // content: error
         }
     })
-    next()
 }
 
 UserModel.logout = async (ctx, next) => {
