@@ -38,12 +38,14 @@ dir.deleteDir = async (ctx, next) => {
     const deleteDir = async ()=> directory.destroy()
     try {
         const data = await deleteDir()
-        if (data) {
+        if (data && JSON.stringify(data) !== "{}") {
             ctx.body = {
                 result: true,
                 msg: "删除成功",
                 content: data
             }
+        } else {
+            throw new Error("删除出差啦")
         }
     } catch (e) {
         ctx.body = {

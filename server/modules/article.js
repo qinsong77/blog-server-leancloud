@@ -6,6 +6,8 @@
 
 const AV = require("leanengine")
 const Article = AV.Object.extend("article")
+const tagObject = AV.Object.extend("tag")
+const dirObject = AV.Object.extend("directory")
 // 对Date的拓展，将Date转化为制定个事的String
 // 例子：
 // (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
@@ -47,9 +49,9 @@ Content.hello = (ctx, next) => {
 }
 
 // 获取文章列表
-Content.articleAll = async (req, res) => {
+Content.articleAll = async (ctx, next) => {
     const queryArticleAll = () => {
-        const query = new AV.Query("ContentList") // 创建查询实例
+        const query = new AV.Query("article") // 创建查询实例
         query.descending("createdAt") // 创建时间->降序查询
         return query.find()
     }
@@ -71,21 +73,29 @@ Content.articleAll = async (req, res) => {
             final_result.result = true
             final_result.listLength = arr.length
             final_result.data = arr
-            res.send(final_result)
+            ctx.body = {
+                result: true,
+                msg: "查询成功",
+                content: final_result
+            }
         } else {
             throw new Error("Can't find the data-Content")
         }
     } catch (error) {
-        console.log(error)
+        ctx.body = {
+            result: false,
+            msg: "查询失败",
+            content: error
+        }
     }
 }
 
 // 获取10篇文章
-Content.getArticleListByPage = async (req, res) => {
-    const page = req.params.page || 1
+Content.getArticleListByPage = async (ctx, next) => {
+    const page = ctx.query.page || 1
 
     const queryTenArticle = (page) => {
-        const query = new AV.Query("ContentList") // 创建查询实例
+        const query = new AV.Query("article") // 创建查询实例
         query.descending("createdAt") // 创建时间->降序查询
         query.skip((page - 1) * 10) // 跳过指定项
         query.limit(10) // 限制返回项数量
@@ -99,22 +109,34 @@ Content.getArticleListByPage = async (req, res) => {
             let arr = []
             for (let item of data) {
                 let result = {}
-                result.objectId = item.get("objectId")
+                result.id = item.get("objectId")
                 result.title = item.get("title")
-                result.abstract = item.get("abstract")
+                result.content = item.get("content")
+                result.desc = item.get("desc")
+                result.dirs = item.get("dirs")
+                result.tags = item.get("tags")
                 result.author = item.get("author")
+                result.imgUrl = item.get("imgUrl")
                 result.createdAt = item.get("createdAt").Format("yyyy-MM-dd hh:mm:ss")
                 arr.push(result)
             }
             let final_result = {}
             final_result.page = page
             final_result.data = arr
-            res.send(final_result)
+            ctx.body = {
+                result: true,
+                msg: "查询成功",
+                content: final_result
+            }
         } else {
             throw new Error("Can't find the data-Content")
         }
     } catch (err) {
-        console.error(err)
+        ctx.body = {
+            result: false,
+            msg: "查询失败",
+            content: err
+        }
     }
 }
 
@@ -176,7 +198,8 @@ Content.submitArticle = async (ctx, next) => {
         desc,
         tags,
         content,
-        origin
+        origin,
+        imgUrl,
     } = ctx.request.body
     const saveArticle = async () =>{
         const myPost = new Article()
@@ -186,8 +209,31 @@ Content.submitArticle = async (ctx, next) => {
         myPost.set("origin", origin)
         myPost.set("dirs", dirs)
         myPost.set("tags", tags)
+        myPost.set("imgUrl", imgUrl)
         myPost.set("owner", ctx.request.currentUser)
         myPost.set("author", ctx.request.currentUser.attributes.username)
+
+        async function LinkTags() {
+            for (let i = 0; i < tags.length; i++) {
+                let tag = AV.Object.createWithoutData("tagObject", tags[i].id)
+                const ArticleTagMap = new AV.Object("ArticleTagMap")
+                ArticleTagMap.set("article", myPost)
+                ArticleTagMap.set("tag", tag)
+                await ArticleTagMap.save()
+            }
+        }
+        async function LinkDirs() {
+            for (let i = 0; i < dirs.length; i++) {
+                let tag = AV.Object.createWithoutData("dirObject", dirs[i].id)
+                const ArticleDirMap = new AV.Object("ArticleDirMap")
+                ArticleDirMap.set("article", myPost)
+                ArticleDirMap.set("dir", tag)
+                await ArticleDirMap.save()
+            }
+        }
+        await LinkTags()
+        await LinkDirs()
+
         return myPost.save()
     }
 

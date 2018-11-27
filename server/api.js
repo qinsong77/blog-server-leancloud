@@ -54,6 +54,6 @@ router.get("/tags/:tagId", tags.tagList);
 // file
 router.post("/fileUpload", check.checkLogin, check.checkIfAdmin, file.upload);
 router.get("/queryFiles", file.queryFiles);
-router.get("/deleteFiles", check.checkLogin, check.checkIfAdmin, file.deleteFiles);
+router.delete("/deleteFiles", check.checkLogin, check.checkIfAdmin, file.deleteFiles);
 
 module.exports = router;

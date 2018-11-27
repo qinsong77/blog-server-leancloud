@@ -15,10 +15,9 @@ require("./cloud")
 const apiRouter = require("./api")
 
 const app = new Koa()
-
+let router = new Router()
 // 设置静态资源目录
 app.use(statics(path.join(__dirname, "../public")))
-
 // 加载云引擎中间件
 app.use(AV.koa())
 app.use(AV.Cloud.CookieSession({
@@ -27,13 +26,21 @@ app.use(AV.Cloud.CookieSession({
 app.use(koaBody({
     multipart: true,
     formidable: {
-        maxFileSize:300 * 1024 * 1024    // 设置上传文件大小最大限制，默认3M
+        maxFileSize: 300 * 1024 * 1024 // 设置上传文件大小最大限制，默认3M
     }
 }));
+
+app.use(async (ctx, next) => {
+    let start = new Date()
+    await next()
+    let ms = new Date() - start
+    console.log("%s %s - %s", ctx.method, ctx.url, ms + "ms")
+})
+
 // api配置
-let router = new Router()
+
 router.use("/admin/api", apiRouter.routes(), apiRouter.allowedMethods())
 
 app.use(router.routes()).use(router.allowedMethods())
-app.on("error", (err, ctx) => console.error("server error", err))
+
 module.exports = app

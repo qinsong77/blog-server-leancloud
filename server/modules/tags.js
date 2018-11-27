@@ -45,7 +45,7 @@ Tag.deleteTag = async (ctx, next) => {
     const deleteTag = async ()=> tag.destroy()
     try {
         const data = await deleteTag()
-        if (data) {
+        if (data && JSON.stringify(data) !== "{}") {
             ctx.body = {
                 result: true,
                 msg: "删除成功",

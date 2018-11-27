@@ -1,19 +1,19 @@
 const check = {
-    checkLogin(ctx, next) {
+    async checkLogin(ctx, next) {
         if (ctx.request.currentUser === undefined) {
             ctx.body = {
                 result: false,
                 msg: "未登陆",
             }
         } else {
-            next()
+            await next()
         }
     },
 
     // 用于注册时
-    checkNotLogin(ctx, next) {
+    async checkNotLogin(ctx, next) {
         if (ctx.request.currentUser === undefined) {
-            next()
+            await next()
         } else {
             ctx.body = {
                 result: false,
@@ -21,9 +21,9 @@ const check = {
             }
         }
     },
-    checkIfAdmin(ctx, next) {
+    async checkIfAdmin(ctx, next) {
         if ((ctx.request.currentUser.attributes.username === "admin") || ctx.request.currentUser.attributes.username === "sysuke") {
-            next()
+            await next()
         } else {
             ctx.body = {
                 result: false,

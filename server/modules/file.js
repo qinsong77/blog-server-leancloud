@@ -33,12 +33,11 @@ fileModel.upload = async (ctx, next) =>{
             throw new Error(data)
         }
         const data2 = await saveF(file, data1)
-        console.log(data2)
         return data2
     }
     try {
         const result = await saveFile()
-        console.log(1111111)
+        console.log(result)
         ctx.body = {
             result: true,
             msg: "上传成功！",
@@ -85,6 +84,7 @@ fileModel.queryFiles = async (ctx, next) => {
 }
 fileModel.deleteFiles = async (ctx, next) => {
     const fileId = ctx.query.fileId;
+    console.log(fileId)
     if (fileId === "") {
         ctx.body = {
             result: false,
@@ -92,37 +92,30 @@ fileModel.deleteFiles = async (ctx, next) => {
             content: null
         }
     }
-    const deleteFile = () => {
-        let file = AV.File.createWithoutData(fileId);
-        return new Promise((resolve, reject) => {
-            file.destroy().then(function (success) {
-                console.log(success);
-                console.log("ss:" + success);
-                resolve(success);
-            }, function (error) {
-                console.log("err:" + error);
-                reject(error)
-            });
-        })
-    }
+    let file = AV.File.createWithoutData(fileId)
+    const deleteFile = async ()=> file.destroy()
     try {
         const data = await deleteFile();
-        console.log("data:" + data);
-        if (data) {
+        console.log("data:");
+        console.log(data)
+        if (data && JSON.stringify(data) !== "{}") {
             ctx.body = {
                 result: true,
                 msg: "删除成功",
                 content: data
             }
+            next()
         } else {
             throw new Error("Can not find.");
         }
     } catch (error) {
+        console.log(error)
         ctx.body = {
             result: false,
             msg: "删除失败",
             content: error
         }
+        next()
     }
 }
 
