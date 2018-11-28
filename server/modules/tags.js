@@ -40,7 +40,6 @@ Tag.tags = async (ctx, next) => {
 }
 Tag.deleteTag = async (ctx, next) => {
     const id = ctx.query.id
-    console.log(id)
     let tag = AV.Object.createWithoutData("tag", id)
     const deleteTag = async ()=> tag.destroy()
     try {

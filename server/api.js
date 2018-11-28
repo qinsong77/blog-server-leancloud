@@ -30,8 +30,9 @@ router.delete("/deleteDir", directory.deleteDir);
 router.get("/queryDir", directory.queryDir);
 // article
 router.get("/articleAll", article.articleAll);
+router.get("/getArticleListByID", article.getArticleListByID);
 router.get("/getArticleListByPage/:page", article.getArticleListByPage);
-router.get("/article/backgroundImg", article.getImgUrl);
+router.delete("/delete/article", article.deleteArticle);
 // Article
 router.get("/getArticleDetailByID", article.getArticleDetailByID);
 router.post("/article/submitArticle", check.checkLogin, check.checkIfAdmin, article.submitArticle);

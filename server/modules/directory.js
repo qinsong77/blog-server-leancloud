@@ -4,11 +4,11 @@ const dir = {}
 
 dir.newDir = async (ctx, next) => {
     const {
-        label, parent, root, leaf
+        name, parent, root, leaf
     } = ctx.request.body
     const saveDir = async ()=> {
         const newDir = new Directory()
-        newDir.set("label", label)
+        newDir.set("name", name)
         newDir.set("parent", parent)
         newDir.set("root", root)
         newDir.set("leaf", leaf)
@@ -69,8 +69,8 @@ dir.queryDir = async (ctx, next) => {
             let id = item.get("objectId")
             if (item.get("root")) {
                 result.push({
-                    value: id,
-                    label: item.get("label"),
+                    id: id,
+                    name: item.get("name"),
                     root: item.get("root")
                 })
                 if (!child.hasOwnProperty(id)) {
@@ -80,22 +80,22 @@ dir.queryDir = async (ctx, next) => {
                 let parent = item.get("parent").id
                 if (child.hasOwnProperty(parent)) {
                     child[parent].push({
-                        value: id,
-                        label: item.get("label"),
+                        id: id,
+                        name: item.get("name"),
                         root: item.get("root")
                     })
                 } else {
                     child[parent] = [];
                     child[parent].push({
-                        value: id,
-                        label: item.get("label"),
+                        id: id,
+                        name: item.get("name"),
                         root: item.get("root")
                     })
                 }
             }
         })
         result.forEach(item => {
-            if (child.hasOwnProperty(item.value) && child[item.value].length > 0) item.children = child[item.value]
+            if (child.hasOwnProperty(item.id) && child[item.id].length > 0) item.children = child[item.id]
         })
         ctx.body = {
             result: true,

@@ -140,26 +140,86 @@ Content.getArticleListByPage = async (ctx, next) => {
     }
 }
 
-// 获取首页头图 url
-Content.getImgUrl = async (req, res) => {
-    const queryImgUrl = () => {
-        const query = new AV.Query("index_background")
-        query.descending("createdAt")
-        return query.find()
+Content.getArticleListByID= async (ctx, next) => {
+    const id = ctx.query.id
+
+    const queryArticle = async () => {
+        const query = new AV.Query("article") // 创建查询实例
+        return query.get(id)
     }
+
     try {
-        const data = await queryImgUrl()
-        if (data) {
-            let arr = []
-            for (let item of data) {
-                arr.push(item.get("img_background").attributes.url)
+        const item = await queryArticle()
+
+        if (item) {
+            let result = {}
+            result.id = item.get("objectId")
+            result.title = item.get("title")
+            result.content = item.get("content")
+            result.desc = item.get("desc")
+            result.dirs = item.get("dirs")
+            result.tags = item.get("tags")
+            result.author = item.get("author")
+            result.imgUrl = item.get("imgUrl")
+            result.createdAt = item.get("createdAt").Format("yyyy-MM-dd hh:mm:ss")
+            ctx.body = {
+                result: true,
+                msg: "查询成功",
+                content: result
             }
-            res.send(arr)
         } else {
             throw new Error("Can't find the data-Content")
         }
-    } catch (error) {
-        console.log(error)
+    } catch (err) {
+        ctx.body = {
+            result: false,
+            msg: "查询失败",
+            content: err
+        }
+    }
+}
+Content.deleteArticle = async (ctx, next) => {
+    const id = ctx.query.id
+    let article = AV.Object.createWithoutData("article", id)
+
+
+    const deleteArticle = async ()=> article.destroy()
+    const deleteArticleTagMap = async () => {
+        const query = new AV.Query('ArticleTagMap');
+        query.equalTo('article', article);
+        const data = await query.find()
+        return AV.Object.destroyAll(data)
+
+    }
+    const deleteArticleDirMap = async () => {
+        const query = new AV.Query('ArticleDirMap');
+        query.equalTo('article', article);
+        const data = await query.find()
+        return AV.Object.destroyAll(data)
+
+    }
+
+    try {
+        const data =  await Promise.all([
+            deleteArticle(),
+            deleteArticleTagMap(),
+            deleteArticleDirMap(),
+        ]);
+        if (data && JSON.stringify(data) !== "{}") {
+            ctx.body = {
+                result: true,
+                msg: "删除成功",
+                content: data
+            }
+        } else {
+            throw new Error("delete tag error")
+        }
+    } catch (e) {
+        ctx.body = {
+            result: false,
+            msg: "删除失败",
+            content: e
+        }
     }
 }
 
