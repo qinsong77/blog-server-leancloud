@@ -92,7 +92,7 @@ Content.articleAll = async (ctx, next) => {
 
 // 获取10篇文章
 Content.getArticleListByPage = async (ctx, next) => {
-    const page = ctx.query.page || 1
+    const page = ctx.params.page || 1
 
     const queryTenArticle = (page) => {
         const query = new AV.Query("article") // 创建查询实例
@@ -111,7 +111,8 @@ Content.getArticleListByPage = async (ctx, next) => {
                 let result = {}
                 result.id = item.get("objectId")
                 result.title = item.get("title")
-                result.content = item.get("content")
+                result.viewCount = item.get("viewCount")
+                // result.content = item.get("content")
                 result.desc = item.get("desc")
                 result.dirs = item.get("dirs")
                 result.tags = item.get("tags")
@@ -140,17 +141,20 @@ Content.getArticleListByPage = async (ctx, next) => {
     }
 }
 
-Content.getArticleListByID= async (ctx, next) => {
-    const id = ctx.query.id
-
+Content.getArticleDetailByID = async (ctx, next) => {
+    const id = ctx.params.id
+    console.log(id)
     const queryArticle = async () => {
         const query = new AV.Query("article") // 创建查询实例
         return query.get(id)
     }
-
+    const addViewCount = async () => {
+        const myPost = AV.Object.createWithoutData("article", id)
+        myPost.set("viewCount", myPost.get("viewCount") ++)
+        return await myPost.save()
+    }
     try {
-        const item = await queryArticle()
-
+        const item = await addViewCount()
         if (item) {
             let result = {}
             result.id = item.get("objectId")
@@ -159,8 +163,11 @@ Content.getArticleListByID= async (ctx, next) => {
             result.desc = item.get("desc")
             result.dirs = item.get("dirs")
             result.tags = item.get("tags")
+            result.viewCount = item.get("viewCount")
             result.author = item.get("author")
+            result.origin = item.get("origin")
             result.imgUrl = item.get("imgUrl")
+            result.status = item.get("status")
             result.createdAt = item.get("createdAt").Format("yyyy-MM-dd hh:mm:ss")
             ctx.body = {
                 result: true,
@@ -185,22 +192,20 @@ Content.deleteArticle = async (ctx, next) => {
 
     const deleteArticle = async ()=> article.destroy()
     const deleteArticleTagMap = async () => {
-        const query = new AV.Query('ArticleTagMap');
-        query.equalTo('article', article);
+        const query = new AV.Query("ArticleTagMap");
+        query.equalTo("article", article);
         const data = await query.find()
         return AV.Object.destroyAll(data)
-
     }
     const deleteArticleDirMap = async () => {
-        const query = new AV.Query('ArticleDirMap');
-        query.equalTo('article', article);
+        const query = new AV.Query("ArticleDirMap");
+        query.equalTo("article", article);
         const data = await query.find()
         return AV.Object.destroyAll(data)
-
     }
 
     try {
-        const data =  await Promise.all([
+        const data = await Promise.all([
             deleteArticle(),
             deleteArticleTagMap(),
             deleteArticleDirMap(),
@@ -223,32 +228,6 @@ Content.deleteArticle = async (ctx, next) => {
     }
 }
 
-// 获取指定 id 的文章信息
-Content.getArticleDetailByID = async (req, res) => {
-    const articleId = req.query.articleId
-    console.log(articleId)
-    const queryArticle = (id) => {
-        const query = new AV.Query("ContentList")
-        return query.get(articleId)
-    }
-    try {
-        const data = await queryArticle(articleId)
-
-        let result = {}
-        if (data) {
-            result.title = data.get("title")
-            // result.cover = data.get('cover').get('url')
-            result.content = data.get("content")
-            result.createdAt = data.get("createdAt")
-            // .Format("yyyy-MM-dd")
-            res.send(result)
-        } else {
-            throw new Error("article can not found")
-        }
-    } catch (error) {
-        console.log(error)
-    }
-}
 
 
 Content.submitArticle = async (ctx, next) => {
@@ -260,15 +239,18 @@ Content.submitArticle = async (ctx, next) => {
         content,
         origin,
         imgUrl,
+        status
     } = ctx.request.body
     const saveArticle = async () =>{
         const myPost = new Article()
         myPost.set("title", title)
+        myPost.set("viewCount", 0) //设置阅读人数
         myPost.set("content", content)
         myPost.set("desc", desc)
         myPost.set("origin", origin)
         myPost.set("dirs", dirs)
         myPost.set("tags", tags)
+        myPost.set("status", status)
         myPost.set("imgUrl", imgUrl)
         myPost.set("owner", ctx.request.currentUser)
         myPost.set("author", ctx.request.currentUser.attributes.username)
@@ -314,4 +296,120 @@ Content.submitArticle = async (ctx, next) => {
     }
 }
 
+Content.editArticle = async (ctx, next) => {
+    const {
+        id,
+        title,
+        desc,
+        content,
+        origin,
+        imgUrl,
+        status,
+        dirs,
+        tags,
+        needDeleteTags,
+        needSaveTags,
+        needDeleteDirs,
+        needSaveDirs
+    } = ctx.request.body
+    const saveArticle = async () =>{
+        const myPost = AV.Object.createWithoutData("article", id)
+        if (title) {
+            myPost.set("title", title)
+        }
+        if (content) {
+            myPost.set("content", content)
+        }
+        if (desc) {
+            myPost.set("desc", desc)
+        }
+        if (origin) {
+            myPost.set("origin", origin)
+        }
+        if (status) {
+            myPost.set("status", status)
+        }
+        if (imgUrl) {
+            myPost.set("imgUrl", imgUrl)
+        }
+        if (dirs) {
+            myPost.set("dirs", dirs)
+        }
+        if (tags) {
+            myPost.set("tags", tags)
+        }
+        // myPost.set("owner", ctx.request.currentUser)
+        // myPost.set("author", ctx.request.currentUser.attributes.username)
+        async function LinkTags(Tags) {
+            for (let i = 0; i < Tags.length; i++) {
+                let tag = AV.Object.createWithoutData("tagObject", Tags[i].id)
+                const ArticleTagMap = new AV.Object("ArticleTagMap")
+                ArticleTagMap.set("article", myPost)
+                ArticleTagMap.set("tag", tag)
+                await ArticleTagMap.save()
+            }
+        }
+        async function LinkDirs(Dirs) {
+            for (let i = 0; i < Dirs.length; i++) {
+                let tag = AV.Object.createWithoutData("dirObject", Dirs[i].id)
+                const ArticleDirMap = new AV.Object("ArticleDirMap")
+                ArticleDirMap.set("article", myPost)
+                ArticleDirMap.set("dir", tag)
+                await ArticleDirMap.save()
+            }
+        }
+        console.log(needDeleteTags)
+        console.log(needSaveTags)
+        console.log(needDeleteDirs)
+        console.log(needSaveDirs)
+
+        const deleteArticleTagMap = async (Tags) => {
+            const query = new AV.Query("ArticleTagMap")
+            query.equalTo("article", myPost)
+            const Data = []
+            for (let i = 0; i < Tags.length; i++) {
+                let tag = AV.Object.createWithoutData("tagObject", Tags[i].id)
+                query.equalTo("tag", tag)
+                const data = await query.find()
+                Data.push(data[0])
+            }
+            console.log(Data)
+            await AV.Object.destroyAll(Data)
+        }
+        const deleteArticleDirMap = async (Dirs) => {
+            const query = new AV.Query("ArticleDirMap");
+            query.equalTo("article", myPost)
+            const Data = []
+            for (let i = 0; i < Dirs.length; i++) {
+                let dir = AV.Object.createWithoutData("tagObject", Dirs[i].id)
+                query.equalTo("dir", dir)
+                const data = await query.find()
+                Data.push(data[0])
+            }
+            await AV.Object.destroyAll(Data)
+        }
+
+        await LinkTags(needSaveTags)
+        await LinkDirs(needSaveDirs)
+        await deleteArticleDirMap(needDeleteDirs)
+        await deleteArticleTagMap(needDeleteTags)
+        return myPost.save()
+    }
+
+    try {
+        const data = await saveArticle()
+        ctx.body = {
+            result: true,
+            msg: "修改成功",
+            content: data
+        }
+    } catch (error) {
+        console.log("修改失败:" + error)
+        ctx.body = {
+            result: false,
+            msg: "修改失败",
+            content: error
+        }
+    }
+}
 module.exports = Content

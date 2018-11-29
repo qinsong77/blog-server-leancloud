@@ -12,7 +12,8 @@ const config = require("../config")
 require("./cloud")
 
 // 各个模块
-const apiRouter = require("./api")
+const apiAdmin = require("./apiAdmin")
+const apiBlog = require("./apiBlog")
 
 const app = new Koa()
 let router = new Router()
@@ -39,7 +40,8 @@ app.use(async (ctx, next) => {
 
 // api配置
 
-router.use("/admin/api", apiRouter.routes(), apiRouter.allowedMethods())
+router.use("/admin/api", apiAdmin.routes(), apiAdmin.allowedMethods())
+router.use("/blog/api", apiBlog.routes(), apiBlog.allowedMethods())
 
 app.use(router.routes()).use(router.allowedMethods())
 

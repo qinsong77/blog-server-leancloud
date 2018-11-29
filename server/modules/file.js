@@ -6,7 +6,7 @@ let fs = require("fs")
 let fileModel = {}
 
 fileModel.upload = async (ctx, next) =>{
-    const file = ctx.request.files.file; // 获取上传文件\
+    const file = ctx.request.files.file; // 获取上传文件
     const saveFile = async ()=> {
         const readFile = async (File)=> {
             return new Promise((resolve, reject) => {
@@ -93,7 +93,13 @@ fileModel.deleteFiles = async (ctx, next) => {
         }
     }
     let file = AV.File.createWithoutData(fileId)
-    const deleteFile = async ()=> file.destroy()
+    const deleteFile = async ()=> {
+        return await file.destroy().then((success)=>{
+            return Promise.resolve(success)
+        }).catch(error=>{
+            return Promise.reject(error)
+        })
+    }
     try {
         const data = await deleteFile();
         console.log("data:");
@@ -104,7 +110,6 @@ fileModel.deleteFiles = async (ctx, next) => {
                 msg: "删除成功",
                 content: data
             }
-            next()
         } else {
             throw new Error("Can not find.");
         }
