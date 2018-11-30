@@ -8,6 +8,7 @@ const AV = require("leanengine")
 const Article = AV.Object.extend("article")
 const tagObject = AV.Object.extend("tag")
 const dirObject = AV.Object.extend("directory")
+const FILE = AV.Object.extend("_File")
 // 对Date的拓展，将Date转化为制定个事的String
 // 例子：
 // (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
@@ -148,14 +149,15 @@ Content.getArticleDetailByID = async (ctx, next) => {
         const query = new AV.Query("article") // 创建查询实例
         return query.get(id)
     }
-    const addViewCount = async () => {
-        const myPost = AV.Object.createWithoutData("article", id)
-        myPost.set("viewCount", myPost.get("viewCount") ++)
-        return await myPost.save()
-    }
     try {
-        const item = await addViewCount()
+        const item = await queryArticle()
         if (item) {
+            const myPost = AV.Object.createWithoutData("article", id)
+            await myPost.save().then(post=>{
+                post.increment("viewCount", 1);
+                // post.fetchWhenSave(true);
+                return post.save();
+            })
             let result = {}
             result.id = item.get("objectId")
             result.title = item.get("title")
@@ -169,6 +171,7 @@ Content.getArticleDetailByID = async (ctx, next) => {
             result.imgUrl = item.get("imgUrl")
             result.status = item.get("status")
             result.createdAt = item.get("createdAt").Format("yyyy-MM-dd hh:mm:ss")
+            result.fileId = item.get("fileId")
             ctx.body = {
                 result: true,
                 msg: "查询成功",
@@ -229,7 +232,6 @@ Content.deleteArticle = async (ctx, next) => {
 }
 
 
-
 Content.submitArticle = async (ctx, next) => {
     const {
         title,
@@ -239,12 +241,13 @@ Content.submitArticle = async (ctx, next) => {
         content,
         origin,
         imgUrl,
-        status
+        status,
+        fileId
     } = ctx.request.body
     const saveArticle = async () =>{
         const myPost = new Article()
         myPost.set("title", title)
-        myPost.set("viewCount", 0) //设置阅读人数
+        myPost.set("viewCount", 0) // 设置阅读人数
         myPost.set("content", content)
         myPost.set("desc", desc)
         myPost.set("origin", origin)
@@ -252,9 +255,11 @@ Content.submitArticle = async (ctx, next) => {
         myPost.set("tags", tags)
         myPost.set("status", status)
         myPost.set("imgUrl", imgUrl)
+        myPost.set("fileId", fileId)
         myPost.set("owner", ctx.request.currentUser)
         myPost.set("author", ctx.request.currentUser.attributes.username)
-
+        const File = AV.Object.createWithoutData("FILE", fileId)
+        myPost.set("file", File)
         async function LinkTags() {
             for (let i = 0; i < tags.length; i++) {
                 let tag = AV.Object.createWithoutData("tagObject", tags[i].id)
@@ -305,6 +310,7 @@ Content.editArticle = async (ctx, next) => {
         origin,
         imgUrl,
         status,
+        fileId,
         dirs,
         tags,
         needDeleteTags,
@@ -337,6 +343,11 @@ Content.editArticle = async (ctx, next) => {
         }
         if (tags) {
             myPost.set("tags", tags)
+        }
+        if (fileId) {
+            myPost.set("fileId", fileId)
+            const File = AV.Object.createWithoutData("FILE", fileId)
+            myPost.set("file", File)
         }
         // myPost.set("owner", ctx.request.currentUser)
         // myPost.set("author", ctx.request.currentUser.attributes.username)

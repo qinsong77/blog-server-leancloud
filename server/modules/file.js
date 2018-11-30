@@ -6,6 +6,7 @@ let fs = require("fs")
 let fileModel = {}
 
 fileModel.upload = async (ctx, next) =>{
+    const { articleId, deleteFileId } = ctx.request.body
     const file = ctx.request.files.file; // 获取上传文件
     const saveFile = async ()=> {
         const readFile = async (File)=> {
@@ -28,16 +29,22 @@ fileModel.upload = async (ctx, next) =>{
         const saveF = async (File, data)=> {
             if (Buffer.isBuffer(data)) {
                 const theFile = new AV.File(File.name, data);
+                if (articleId) {
+                    theFile.set("articleId", articleId)
+                }
                 return theFile.save()
             }
             throw new Error(data)
+        }
+        if (deleteFileId) {
+            let deleteFileObj = AV.File.createWithoutData(deleteFileId)
+            await deleteFileObj.destroy()
         }
         const data2 = await saveF(file, data1)
         return data2
     }
     try {
         const result = await saveFile()
-        console.log(result)
         ctx.body = {
             result: true,
             msg: "上传成功！",
@@ -95,6 +102,7 @@ fileModel.deleteFiles = async (ctx, next) => {
     let file = AV.File.createWithoutData(fileId)
     const deleteFile = async ()=> {
         return await file.destroy().then((success)=>{
+            console.log(success)
             return Promise.resolve(success)
         }).catch(error=>{
             return Promise.reject(error)
@@ -102,8 +110,8 @@ fileModel.deleteFiles = async (ctx, next) => {
     }
     try {
         const data = await deleteFile();
-        console.log("data:");
-        console.log(data)
+        // console.log("data:");
+        // console.log(data)
         if (data && JSON.stringify(data) !== "{}") {
             ctx.body = {
                 result: true,
