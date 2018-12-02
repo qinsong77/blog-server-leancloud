@@ -42,7 +42,7 @@ router.post("/dir/create", directory.newDir)
 router.delete("/dir/delete", directory.deleteDir)
 router.get("/dir/all", directory.queryDir)
 // article
-router.get("/artitle/all", article.articleAll)
+router.get("/artitle/query", article.articleQuery)
 router.get("/article/:id", article.getArticleDetailByID)
 router.get("/article/page/:page", article.getArticleListByPage)
 router.delete("/article/delete", article.deleteArticle)

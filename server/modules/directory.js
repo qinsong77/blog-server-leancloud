@@ -45,7 +45,7 @@ dir.deleteDir = async (ctx, next) => {
                 content: data
             }
         } else {
-            throw new Error("删除出差啦")
+            throw new Error("删除出错啦")
         }
     } catch (e) {
         ctx.body = {

@@ -27,13 +27,14 @@ router.get("/tag/:tagId", tags.tagList)
 router.get("/dir/all", directory.queryDir)
 
 // article
-router.get("/artitle/all", article.articleAll)
+router.get("/article/query", article.articleQuery)
+router.get("/article/queryhotlist", article.queryTopHot)
 router.get("/article/:id", article.getArticleDetailByID)
 router.get("/article/page/:page", article.getArticleListByPage)
 
 // Comment
 router.get("/comments", comments.commentsList)
-router.post("/comments/submitComment", check.checkLogin, comments.submitComment)
+router.post("/comments/create", check.checkLogin, comments.submitComment)
 
 // 留言
 router.get("/mes/getAllMes", mes.messAll)

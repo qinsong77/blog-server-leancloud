@@ -9,10 +9,7 @@ const Article = AV.Object.extend("article")
 const tagObject = AV.Object.extend("tag")
 const dirObject = AV.Object.extend("directory")
 const FILE = AV.Object.extend("_File")
-// 对Date的拓展，将Date转化为制定个事的String
-// 例子：
-// (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423
-// (new Date()).Format("yyyy-M-d:m:s.S") ==> 2006-7-2 8:9:4.18
+
 
 Date.prototype.Format = function (fmt) {
     var o = {
@@ -49,30 +46,80 @@ Content.hello = (ctx, next) => {
     }
 }
 
-// 获取文章列表
-Content.articleAll = async (ctx, next) => {
-    const queryArticleAll = () => {
-        const query = new AV.Query("article") // 创建查询实例
-        query.descending("createdAt") // 创建时间->降序查询
-        return query.find()
-    }
+Content.queryTopHot = async (ctx,next) => {
+    const query = new AV.Query("article") // 创建查询实例
+    query.descending("viewCount") //
+    query.limit(10) // 限制返回项数量
     try {
-        const data = await queryArticleAll()
+        const data = await query.find()
 
         if (data) {
             let arr = []
             for (let item of data) {
                 let result = {}
-                result.objectId = item.get("objectId")
+                result.id = item.get("objectId")
                 result.title = item.get("title")
-                result.abstract = item.get("abstract")
+                result.viewCount = item.get("viewCount")
+                arr.push(result)
+            }
+            ctx.body = {
+                result: true,
+                msg: "查询成功",
+                content: arr
+            }
+        } else {
+            throw new Error("Can't find the data-Content")
+        }
+    } catch (err) {
+        ctx.body = {
+            result: false,
+            msg: "查询失败",
+            content: err
+        }
+    }
+}
+
+Content.articleQuery = async (ctx, next) => {
+    const tagId = ctx.query.tag
+    const dirId = ctx.query.dir
+    console.log(dirId)
+    const queryArticleAll = async () => {
+        if(tagId){
+            const tag = AV.Object.createWithoutData('tagObject',tagId)
+            const query = new AV.Query('ArticleTagMap');
+            query.equalTo('tag', tag);
+            query.include('article');
+            query.descending("createdAt") // 创建时间->降序查询
+            return await query.find()
+        }else if(dirId){
+            const dir = AV.Object.createWithoutData('dirObject',dirId)
+            const query = new AV.Query('ArticleDirMap');
+            query.equalTo('dir', dir);
+            query.include('article');
+            query.descending("createdAt") // 创建时间->降序查询
+            return await  query.find()
+        }
+    }
+    try {
+        const data = await queryArticleAll()
+        if (data) {
+            let arr = []
+            for (let it of data) {
+                let item = it.get('article')
+                let result = {}
+                result.origin = item.get("origin")
+                result.id = item.get("objectId")
+                result.title = item.get("title")
+                result.viewCount = item.get("viewCount")
+                result.desc = item.get("desc")
+                result.dirs = item.get("dirs")
+                result.tags = item.get("tags")
                 result.author = item.get("author")
+                result.imgUrl = item.get("imgUrl")
                 result.createdAt = item.get("createdAt").Format("yyyy-MM-dd hh:mm:ss")
                 arr.push(result)
             }
             let final_result = {}
-            final_result.result = true
-            final_result.listLength = arr.length
             final_result.data = arr
             ctx.body = {
                 result: true,
@@ -97,6 +144,9 @@ Content.getArticleListByPage = async (ctx, next) => {
 
     const queryTenArticle = (page) => {
         const query = new AV.Query("article") // 创建查询实例
+        if(ctx.url.indexOf('blog') === 0){  //如果是前台的api,只查询发表状态的
+            query.equalTo('status',1)
+        }
         query.descending("createdAt") // 创建时间->降序查询
         query.skip((page - 1) * 10) // 跳过指定项
         query.limit(10) // 限制返回项数量
@@ -110,6 +160,7 @@ Content.getArticleListByPage = async (ctx, next) => {
             let arr = []
             for (let item of data) {
                 let result = {}
+                result.origin = item.get("origin")
                 result.id = item.get("objectId")
                 result.title = item.get("title")
                 result.viewCount = item.get("viewCount")
@@ -230,7 +281,6 @@ Content.deleteArticle = async (ctx, next) => {
         }
     }
 }
-
 
 Content.submitArticle = async (ctx, next) => {
     const {
@@ -369,10 +419,6 @@ Content.editArticle = async (ctx, next) => {
                 await ArticleDirMap.save()
             }
         }
-        console.log(needDeleteTags)
-        console.log(needSaveTags)
-        console.log(needDeleteDirs)
-        console.log(needSaveDirs)
 
         const deleteArticleTagMap = async (Tags) => {
             const query = new AV.Query("ArticleTagMap")
@@ -384,7 +430,6 @@ Content.editArticle = async (ctx, next) => {
                 const data = await query.find()
                 Data.push(data[0])
             }
-            console.log(Data)
             await AV.Object.destroyAll(Data)
         }
         const deleteArticleDirMap = async (Dirs) => {

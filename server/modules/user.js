@@ -98,17 +98,20 @@ UserModel.login = async (ctx, next) =>{
 }
 
 UserModel.logout = async (ctx, next) => {
-    await AV.User.logOut()
-    const currentUser = ctx.request.currentUser
-    if (currentUser) {
+
+    try {
+        const currentUser = ctx.request.currentUser
+        await currentUser.logOut()
+        await ctx.response.clearCurrentUser()
         ctx.body = {
             result: false,
             msg: "退出登陆失败"
         }
-    } else {
+    }catch (e) {
         ctx.body = {
             result: true,
             msg: "退出登陆成功",
+            content: JSON.stringify(e)
         }
     }
 }
