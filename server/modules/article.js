@@ -82,7 +82,6 @@ Content.queryTopHot = async (ctx,next) => {
 Content.articleQuery = async (ctx, next) => {
     const tagId = ctx.query.tag
     const dirId = ctx.query.dir
-    console.log(dirId)
     const queryArticleAll = async () => {
         if(tagId){
             const tag = AV.Object.createWithoutData('tagObject',tagId)

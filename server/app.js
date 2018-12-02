@@ -39,7 +39,14 @@ app.use(async (ctx, next) => {
 })
 
 // api配置
-
+app.use(async (ctx, next) => {
+    console.log(ctx.request.header.referer)
+    if(ctx.request.header.referer.indexOf('https://sysuke.com')!== -1){
+        ctx.set("Access-Control-Allow-Origin", "*");
+        ctx.set("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    }
+    await next();
+});
 router.use("/admin/api", apiAdmin.routes(), apiAdmin.allowedMethods())
 router.use("/blog/api", apiBlog.routes(), apiBlog.allowedMethods())
 
