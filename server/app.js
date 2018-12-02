@@ -30,7 +30,8 @@ app.use(koaBody({
         maxFileSize: 300 * 1024 * 1024 // 设置上传文件大小最大限制，默认3M
     }
 }));
-
+app.proxy = true;
+app.use(AV.Cloud.HttpsRedirect({framework: 'koa'}));
 app.use(async (ctx, next) => {
     let start = new Date()
     let ms = new Date() - start
